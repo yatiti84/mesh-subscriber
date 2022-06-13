@@ -19,8 +19,7 @@ def process_data():
     content = ast.literal_eval(content)
     print(content)
     action = content['action']
-    if action == 'follow' or action == 'unfollow':
-        
+    if 'follow' in action:
         if follow_handler(content):
             return "success"
         else:
