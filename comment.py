@@ -14,15 +14,11 @@ def add_comment_mutation(content):
     comment_content = content['content']
     published_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
-    if content['objective'] == 'story':
-        obj = 'story'
-    elif content['objective'] == 'collection':
-        obj = 'collection'
-    elif content['objective'] == 'comment':
+
+    if content['objective'] == 'comment':
         obj = 'root'
     else:
-        print("objective not exitsts")
-        return False
+        obj = content['objective']
 
     mutation = '''
             mutation{
@@ -43,10 +39,10 @@ def rm_comment_mutation(content):
     commentId = content['commentId']
     mutation = '''
          mutation{
-                updateComment(where:{id:%s}, data:{is_active:false}){
-                    id
-                    }
-                }''' % (commentId)
+            updateComment(where:{id:%s}, data:{is_active:false}){
+                id
+                }
+            }''' % (commentId)
     return mutation
 def edit_comment_mutation(content):
     commentId = content['commentId']

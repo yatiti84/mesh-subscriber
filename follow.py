@@ -29,7 +29,7 @@ def follow_handler(content, gql_client):
     else:
         print("objective not exitsts")
         return False
-        
+
     mutation = '''
     mutation{
     updateMember(where:{id:%s}, data:{%s:{%s:{id:%s}}},){
@@ -52,6 +52,12 @@ def follow_handler(content, gql_client):
 if __name__ == '__main__':
     content = {
         'action': 'remove_follow',
+        'memberId': '2',
+        'objective': 'member',
+        'targetId': '3'
+    }
+    content = {
+        'action': 'add_follow',
         'memberId': '2',
         'objective': 'member',
         'targetId': '3'
