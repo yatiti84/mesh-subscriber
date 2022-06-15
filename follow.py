@@ -2,10 +2,6 @@ import os
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
-gql_endpoint = os.environ['GQL_ENDPOINT']
-gql_transport = AIOHTTPTransport(url=gql_endpoint)
-gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
-
 
 def follow_handler(content, gql_client):
 
@@ -39,7 +35,6 @@ def follow_handler(content, gql_client):
     }
     }''' % (memberId, obj_following, action, targetId)
     result = gql_client.execute(gql(mutation))
-    print(result)
     if isinstance(result, dict) and 'updateMember' in result:
         follow_item = [follow_item['id'] for follow_item in result['updateMember'][obj_following]]
         if targetId in follow_item and action == 'connect':
@@ -50,6 +45,10 @@ def follow_handler(content, gql_client):
 
 
 if __name__ == '__main__':
+    gql_endpoint = os.environ['GQL_ENDPOINT']
+    gql_transport = AIOHTTPTransport(url=gql_endpoint)
+    gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
+
     content = {
         'action': 'remove_follow',
         'memberId': '2',
