@@ -8,14 +8,6 @@ def follow_handler(content, gql_client):
     memberId = content['memberId']
     targetId = content['targetId']
 
-    if content['action'] == 'add_follow':
-        action = 'connect'
-    elif content['action'] == 'remove_follow':
-        action = 'disconnect'
-    else:
-        print("action not exitsts")
-        return False
-
     if content['objective'] == 'member':
         obj_following = 'following'
     elif content['objective'] == 'publisher':
@@ -24,6 +16,14 @@ def follow_handler(content, gql_client):
         obj_following = 'following_collection'
     else:
         print("objective not exitsts")
+        return False
+
+    if content['action'] == 'add_follow':
+        action = 'connect'
+    elif content['action'] == 'remove_follow':
+        action = 'disconnect'
+    else:
+        print("action not exitsts")
         return False
 
     mutation = '''
