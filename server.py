@@ -8,6 +8,7 @@ from flask import Flask, request, Response
 from follow import follow_handler
 from comment import comment_handler
 from pick import pick_handler
+from bookmark import bookmark_handler
 
 app = Flask(__name__)
 
@@ -46,6 +47,12 @@ def process_data():
             return "success"
         else:
             return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
+    if 'bookmark' in action:
+        if bookmark_handler(content, gql_client):
+            return "success"
+        else:
+            return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
+
 
 
 @app.route("/")

@@ -3,9 +3,7 @@ import datetime
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
-gql_endpoint = os.environ['GQL_ENDPOINT']
-gql_transport = AIOHTTPTransport(url=gql_endpoint)
-gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
+
 
 def add_comment_mutation(content):
     memberId = content['memberId']
@@ -75,6 +73,9 @@ def comment_handler(content, gql_client):
 
 
 if __name__ == '__main__':
+    gql_endpoint = os.environ['GQL_ENDPOINT']
+    gql_transport = AIOHTTPTransport(url=gql_endpoint)
+    gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     content = {
         'action': 'add_comment',
         'memberId': '2',

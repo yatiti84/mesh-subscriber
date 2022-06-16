@@ -161,11 +161,11 @@ if __name__ == '__main__':
         'state': 'private',
         'content': '我是content while pick'
     }
-    # content = {
-    #     'action': 'unpick',
-    #     'memberId': '2',
-    #     'objective': 'story',
-    #     'targetId': '88',
-    # }
+    content = {
+        'action': 'unpick',
+        'memberId': '2',
+        'objective': 'story',
+        'targetId': '88',
+    }
 
     print(pick_handler(content, gql_client))
