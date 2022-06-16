@@ -42,7 +42,6 @@ def add_bookmark_mutation(content, gql_client):
         print("query picks failed")
         return False
     result = gql_client.execute(gql(mutation))
-    print(result)
     if isinstance(result, dict) and 'createPick' in result or 'updatePicks':
         return True
     return False
@@ -71,7 +70,6 @@ def remove_bookmark_mutation(content, gql_client):
         print("query picks failed or remove bookmark not exists")
         return False
     result = gql_client.execute(gql(mutation))
-    print(result)
     if isinstance(result, dict) and 'createPick' in result or 'updatePicks':
         return True
     return False
@@ -86,7 +84,6 @@ def check_pick_exists(memberId, storyId, gql_client):
                 }
             }''' % (memberId, storyId)
     result = gql_client.execute(gql(query))
-    print(result)
     if isinstance(result, dict) and 'picks' in result:
         if isinstance(result['picks'], list):
             return result['picks']

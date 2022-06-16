@@ -32,7 +32,10 @@ def add_comment_mutation(content):
                 id
                 } 
             }''' % (memberId, obj, targetId, state, published_date, comment_content)
-    return mutation
+    result = gql_client.execute(gql(mutation))
+    if isinstance(result, dict) and 'createComment' in result:
+        return True
+    return False
 def rm_comment_mutation(content):
     commentId = content['commentId']
     mutation = '''
@@ -41,7 +44,10 @@ def rm_comment_mutation(content):
                 id
                 }
             }''' % (commentId)
-    return mutation
+    result = gql_client.execute(gql(mutation))
+    if isinstance(result, dict) and 'updateComment' in result:
+        return True
+    return False
 def edit_comment_mutation(content):
     commentId = content['commentId']
     comment_content = content['content']
@@ -51,25 +57,24 @@ def edit_comment_mutation(content):
                 id
                 }
             }''' % (commentId, comment_content)
-    return mutation
+    result = gql_client.execute(gql(mutation))
+    if isinstance(result, dict) and 'updateComment' in result:
+        return True
+    return False
     
 def comment_handler(content, gql_client):
 
     if content['action'] == 'add_comment':
-        mutation = add_comment_mutation(content)
+        return add_comment_mutation(content)
     elif content['action'] == 'remove_comment':
-        mutation = rm_comment_mutation(content)
+        return rm_comment_mutation(content)
     elif content['action'] == 'edit_comment':
-        mutation = edit_comment_mutation(content)
+        return edit_comment_mutation(content)
     else:
         print("action not exitsts")
         return False
 
-    result = gql_client.execute(gql(mutation))
-    print(result)
-    if isinstance(result, dict) and 'createComment' in result or 'updateComment' in result:
-        return True
-    return False
+    
 
 
 if __name__ == '__main__':
@@ -84,14 +89,14 @@ if __name__ == '__main__':
         'state': 'public',
         'content': '我是comment content in comment'
     }
-    content = {
-        'action': 'remove_comment',
-        'commentId': '99'
-    }
-    content = {
-        'action': 'edit_comment',
-        'commentId': '99',
-        'content': 'new content in comment'
-    }
+    # content = {
+    #     'action': 'remove_comment',
+    #     'commentId': '99'
+    # }
+    # content = {
+    #     'action': 'edit_comment',
+    #     'commentId': '99',
+    #     'content': 'new content in comment'
+    # }
 
     print(comment_handler(content, gql_client))
