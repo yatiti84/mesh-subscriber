@@ -72,6 +72,7 @@ def add_pick_mutatioin(content, gql_client):
     published_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     if not(memberId and targetId and obj and state):
+        print("no required data for action")
         return False
 
     check_picks = check_pick_exists(memberId, obj, targetId, gql_client)
@@ -96,6 +97,7 @@ def pick_and_comment_mutation(content, gql_client):
     published_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     if not(memberId and targetId and state and pick_content and obj):
+        print("no required data for action")
         return False
 
     comment_obj = 'root' if obj == 'comment' else obj
@@ -120,6 +122,7 @@ def unpick_mutation(content, gql_client):
     obj = content['objective'] if 'objective' in content and content['objective'] else False
 
     if not(memberId and targetId and obj):
+        print("no required data for action")
         return False
 
     check_picks = check_pick_exists(memberId, obj, targetId, gql_client)

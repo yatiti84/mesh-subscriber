@@ -13,6 +13,7 @@ def add_comment_mutation(content):
     published_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     if not(memberId and targetId and state and comment_content and obj):
+        print("no required data for action")
         return False
 
     obj = 'root' if obj == 'comment' else obj
@@ -38,6 +39,7 @@ def add_comment_mutation(content):
 def rm_comment_mutation(content):
     commentId = content['commentId'] if 'commentId' in content and content['commentId'] else False
     if not commentId:
+        print("no required data for action")
         return False
 
     mutation = '''
@@ -53,6 +55,7 @@ def edit_comment_mutation(content):
     commentId = content['commentId'] if 'commentId' in content and content['commentId'] else False
     comment_content = content['content'] if 'content' in content and content['content'] else False
     if not (commentId and comment_content):
+        print("no required data for action")
         return False
         
     mutation = '''

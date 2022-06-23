@@ -10,6 +10,7 @@ def follow_handler(content, gql_client):
     obj = content['objective'] if 'objective' in content and content['objective'] else False
 
     if not(memberId and targetId and obj):
+        print("no required data for action")
         return False
 
     if obj == 'member':

@@ -23,6 +23,7 @@ def add_bookmark_mutation(content, gql_client):
     picked_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
     if not(memberId and storyId):
+        print("no required data for action")
         return False
 
     check_picks = check_pick_exists(memberId, storyId, gql_client)
@@ -67,6 +68,7 @@ def remove_bookmark_mutation(content, gql_client):
     storyId = content['storyId'] if 'storyId' in content and content['storyId'] else False
 
     if not(memberId and storyId):
+        print("no required data for action")
         return False
 
     check_picks = check_pick_exists(memberId, storyId, gql_client)
