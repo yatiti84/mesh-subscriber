@@ -3,11 +3,28 @@ import datetime
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
+def check_pick_exists(memberId, storyId, gql_client):
+
+    query = '''
+            query{
+                picks(where:{member:{id:{in:%s}}, story:{id:{in:%s}}, kind:{equals:"bookmark"}}, orderBy:{id:desc}){
+                    id
+                }
+            }''' % (memberId, storyId)
+    result = gql_client.execute(gql(query))
+    if isinstance(result, dict) and 'picks' in result:
+        if isinstance(result['picks'], list):
+            return result['picks']
+    return False
 
 def add_bookmark_mutation(content, gql_client):
-    memberId = content['memberId']
-    storyId = content['storyId']
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    storyId = content['storyId'] if 'storyId' in content and content['storyId'] else False
     picked_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+    if not(memberId and storyId):
+        return False
+
     check_picks = check_pick_exists(memberId, storyId, gql_client)
     if check_picks == []:  # bookmark not exitsts create new pick
         mutation = '''
@@ -42,14 +59,16 @@ def add_bookmark_mutation(content, gql_client):
         print("query picks failed")
         return False
     result = gql_client.execute(gql(mutation))
-    if isinstance(result, dict) and 'createPick' in result or 'updatePicks':
-        return True
-    return False
+    return True if isinstance(result, dict) and 'createPick' in result or 'updatePicks' else False
 
 
 def remove_bookmark_mutation(content, gql_client):
-    memberId = content['memberId']
-    storyId = content['storyId']
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    storyId = content['storyId'] if 'storyId' in content and content['storyId'] else False
+
+    if not(memberId and storyId):
+        return False
+
     check_picks = check_pick_exists(memberId, storyId, gql_client)
     if check_picks:
         update_data = []
@@ -70,29 +89,13 @@ def remove_bookmark_mutation(content, gql_client):
         print("query picks failed or remove bookmark not exists")
         return False
     result = gql_client.execute(gql(mutation))
-    if isinstance(result, dict) and 'createPick' in result or 'updatePicks':
-        return True
-    return False
+    return True if isinstance(result, dict) and 'createPick' in result or 'updatePicks' else False
 
-
-def check_pick_exists(memberId, storyId, gql_client):
-
-    query = '''
-            query{
-                picks(where:{member:{id:{in:%s}}, story:{id:{in:%s}}, kind:{equals:"bookmark"}}, orderBy:{id:desc}){
-                    id
-                }
-            }''' % (memberId, storyId)
-    result = gql_client.execute(gql(query))
-    if isinstance(result, dict) and 'picks' in result:
-        if isinstance(result['picks'], list):
-            return result['picks']
-    return False
 
 
 def bookmark_handler(content, gql_client):
     
-    
+
     if content['action'] == 'add_bookmark':
         return add_bookmark_mutation(content, gql_client)
 
@@ -109,16 +112,4 @@ if __name__ == '__main__':
     gql_client = Client(transport=gql_transport,
                         fetch_schema_from_transport=True)
 
-    content = {
-        'action': 'add_bookmark',
-        'memberId': '2',
-        'storyId': '6',
-    }
-
-    content = {
-        'action': 'remove_bookmark',
-        'memberId': '2',
-        'storyId': '6',
-    }
-
-    print(bookmark_handler(content, gql_client))
+    # print(bookmark_handler(content, gql_client))

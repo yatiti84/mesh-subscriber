@@ -65,11 +65,14 @@ def update_pick_mutation(update_data, gql_client):
 
 
 def add_pick_mutatioin(content, gql_client):
-    memberId = content['memberId']
-    targetId = content['targetId']
-    obj = content['objective']
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
+    obj = content['objective'] if 'objective' in content and content['objective'] else False
+    state = content['state'] if 'state' in content and content['state'] else False
     published_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    state = content['state']
+
+    if not(memberId and targetId and obj and state):
+        return False
 
     check_picks = check_pick_exists(memberId, obj, targetId, gql_client)
     if check_picks == []:  # pick not exitsts create new pick
@@ -85,16 +88,18 @@ def add_pick_mutatioin(content, gql_client):
 
 
 def pick_and_comment_mutation(content, gql_client):
-    memberId = content['memberId']
-    targetId = content['targetId']
-    obj = content['objective']
-    pick_content = content['content']
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
+    obj = content['objective'] if 'objective' in content and content['objective'] else False
+    state = content['state'] if 'state' in content and content['state'] else False
+    pick_content = content['content'] if 'content' in content and content['content'] else False
     published_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    state = content['state']
-    if content['objective'] == 'comment':
-        comment_obj = 'root'
-    else:
-        comment_obj = content['objective']
+
+    if not(memberId and targetId and state and pick_content and obj):
+        return False
+
+    comment_obj = 'root' if obj == 'comment' else obj
+
     pick_comment = '''
             pick_comment:{
                 create:{
@@ -110,9 +115,13 @@ def pick_and_comment_mutation(content, gql_client):
 
 
 def unpick_mutation(content, gql_client):
-    memberId = content['memberId']
-    targetId = content['targetId']
-    obj = content['objective']
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
+    obj = content['objective'] if 'objective' in content and content['objective'] else False
+
+    if not(memberId and targetId and obj):
+        return False
+
     check_picks = check_pick_exists(memberId, obj, targetId, gql_client)
     if check_picks:
         update_data_pick = []
@@ -161,26 +170,4 @@ if __name__ == '__main__':
     gql_client = Client(transport=gql_transport,
                         fetch_schema_from_transport=True)
 
-    content = {
-        'action': 'add_pick',
-        'memberId': '2',
-        'objective': 'story',
-        'targetId': '8',
-        'state': 'friend',
-    }
-    content = {
-        'action': 'pick_and_comment',
-        'memberId': '2',
-        'objective': 'story',
-        'targetId': '8',
-        'state': 'private',
-        'content': '我是content while pick'
-    }
-    content = {
-        'action': 'unpick',
-        'memberId': '2',
-        'objective': 'story',
-        'targetId': '8',
-    }
-
-    print(pick_handler(content, gql_client))
+    # print(pick_handler(content, gql_client))

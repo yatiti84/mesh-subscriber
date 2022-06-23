@@ -27,7 +27,10 @@ def process_data():
     content = base64.b64decode(req["message"]["data"]).decode("utf-8")
     content = ast.literal_eval(content)
     print(content)
-    action = content['action']
+    if 'action' in content and content['action']:
+        action = content['action']
+    else: 
+        return Response("{'error': 'data content with error'}", status=500, mimetype='application/json')
     gql_endpoint = os.environ['GQL_ENDPOINT']
     gql_transport = AIOHTTPTransport(url=gql_endpoint)
     gql_client = Client(transport=gql_transport,

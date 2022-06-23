@@ -5,14 +5,18 @@ from gql.transport.aiohttp import AIOHTTPTransport
 
 def follow_handler(content, gql_client):
 
-    memberId = content['memberId']
-    targetId = content['targetId']
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
+    obj = content['objective'] if 'objective' in content and content['objective'] else False
 
-    if content['objective'] == 'member':
+    if not(memberId and targetId and obj):
+        return False
+
+    if obj == 'member':
         obj_following = 'following'
-    elif content['objective'] == 'publisher':
+    elif obj == 'publisher':
         obj_following = 'follow_publisher'
-    elif content['objective'] == 'collection':
+    elif obj == 'collection':
         obj_following = 'following_collection'
     else:
         print("objective not exitsts")
@@ -49,17 +53,4 @@ if __name__ == '__main__':
     gql_transport = AIOHTTPTransport(url=gql_endpoint)
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
 
-    content = {
-        'action': 'remove_follow',
-        'memberId': '2',
-        'objective': 'member',
-        'targetId': '3'
-    }
-    content = {
-        'action': 'add_follow',
-        'memberId': '2',
-        'objective': 'member',
-        'targetId': '3'
-    }
-
-    print(follow_handler(content, gql_client))
+    # print(follow_handler(content, gql_client))
