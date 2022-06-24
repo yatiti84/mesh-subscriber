@@ -4,7 +4,7 @@ from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
 
-def add_comment_mutation(content):
+def add_comment_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     state = content['state'] if 'state' in content and content['state'] else False
@@ -36,7 +36,7 @@ def add_comment_mutation(content):
     if isinstance(result, dict) and 'createComment' in result:
         return True
     return False
-def rm_comment_mutation(content):
+def rm_comment_mutation(content, gql_client):
     commentId = content['commentId'] if 'commentId' in content and content['commentId'] else False
     if not commentId:
         print("no required data for action")
@@ -51,7 +51,7 @@ def rm_comment_mutation(content):
     result = gql_client.execute(gql(mutation))
     return True if isinstance(result, dict) and 'updateComment' in result else False
 
-def edit_comment_mutation(content):
+def edit_comment_mutation(content, gql_client):
     commentId = content['commentId'] if 'commentId' in content and content['commentId'] else False
     comment_content = content['content'] if 'content' in content and content['content'] else False
     if not (commentId and comment_content):
@@ -70,11 +70,11 @@ def edit_comment_mutation(content):
 def comment_handler(content, gql_client):
 
     if content['action'] == 'add_comment':
-        return add_comment_mutation(content)
+        return add_comment_mutation(content, gql_client)
     elif content['action'] == 'remove_comment':
-        return rm_comment_mutation(content)
+        return rm_comment_mutation(content, gql_client)
     elif content['action'] == 'edit_comment':
-        return edit_comment_mutation(content)
+        return edit_comment_mutation(content, gql_client)
     else:
         print("action not exitsts")
         return False
