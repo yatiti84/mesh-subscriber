@@ -40,13 +40,13 @@ def process_data():
             return "success"
         else:
             return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
-    if 'comment' in action:
-        if comment_handler(content, gql_client):
+    if 'pick' in action:
+        if pick_handler(content, gql_client):
             return "success"
         else:
             return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
-    if 'pick' in action:
-        if pick_handler(content, gql_client):
+    if 'comment' in action:
+        if comment_handler(content, gql_client):
             return "success"
         else:
             return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
