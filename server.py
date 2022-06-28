@@ -9,7 +9,7 @@ from follow import follow_handler
 from comment import comment_handler
 from pick import pick_handler
 from bookmark import bookmark_handler
-
+from like import like_handler
 app = Flask(__name__)
 
 
@@ -52,6 +52,11 @@ def process_data():
             return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
     if 'bookmark' in action:
         if bookmark_handler(content, gql_client):
+            return "success"
+        else:
+            return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
+    if 'like' in action:
+        if like_handler(content, gql_client):
             return "success"
         else:
             return Response("{'error': 'update data error'}", status=500, mimetype='application/json')
