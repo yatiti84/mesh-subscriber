@@ -1,7 +1,5 @@
-import os
 import datetime
-from gql import gql, Client
-from gql.transport.aiohttp import AIOHTTPTransport
+from gql import gql
 
 
 def check_pick_exists(memberId, obj, targetId, gql_client):
@@ -168,9 +166,6 @@ def pick_handler(content, gql_client):
 
 
 if __name__ == '__main__':
-    gql_endpoint = os.environ['GQL_ENDPOINT']
-    gql_transport = AIOHTTPTransport(url=gql_endpoint)
-    gql_client = Client(transport=gql_transport,
-                        fetch_schema_from_transport=True)
 
     # print(pick_handler(content, gql_client))
+    print("done")
