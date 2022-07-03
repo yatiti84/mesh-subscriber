@@ -8,7 +8,7 @@ WORKDIR  /usr/src/app/db-subscriber
 RUN apt-get update \
     && apt-get install -y gcc libc-dev libxslt-dev libxml2 libpq-dev \
     && pip install --upgrade pip \
-    && pip install -r requirements.txt
+    && pip install -r ./db-subscriber/requirements.txt
 
 EXPOSE 8080
 CMD ["/usr/local/bin/uwsgi", "--ini", "server.ini"]
