@@ -1,7 +1,5 @@
-import os
 import datetime
-from gql import gql, Client
-from gql.transport.aiohttp import AIOHTTPTransport
+from gql import gql
 
 
 def add_comment_mutation(content, gql_client):
@@ -83,7 +81,5 @@ def comment_handler(content, gql_client):
 
 
 if __name__ == '__main__':
-    gql_endpoint = os.environ['GQL_ENDPOINT']
-    gql_transport = AIOHTTPTransport(url=gql_endpoint)
-    gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     # print(comment_handler(content, gql_client))
+    print("done")

@@ -1,6 +1,5 @@
-import os
-from gql import gql, Client
-from gql.transport.aiohttp import AIOHTTPTransport
+from gql import gql
+
 
 def like_handler(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
@@ -28,14 +27,10 @@ def like_handler(content, gql_client):
             
             }''' % (commentId,action, memberId)
     result = gql_client.execute(gql(mutation))
-    print(result)
     return True if isinstance(result, dict) and 'updateComment' in result  else False
     
 
 
 if __name__ == '__main__':
-    gql_endpoint = os.environ['GQL_ENDPOINT']
-    gql_transport = AIOHTTPTransport(url=gql_endpoint)
-    gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
- 
     # print(like_handler(content, gql_client))
+    print("done")
