@@ -11,4 +11,4 @@ RUN apt-get update \
     && pip install -r ./db_subscriber/requirements.txt
 
 EXPOSE 8080
-CMD ["/usr/local/bin/uwsgi", "--ini", "server.ini"]
+CMD ["/usr/local/bin/uwsgi", "--ini", "./db_subscriber/server.ini"]
