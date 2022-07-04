@@ -79,7 +79,7 @@ def add_pick_mutatioin(content, gql_client):
         return create_pick_mutation(memberId, obj, targetId, state, published_date, pick_comment, gql_client)
     elif check_picks:  # update pick is_active to true
         pickId = check_picks[0]['id']
-        update_data = '{where:{id:%s}, data:{is_active:true}}' % (pickId)
+        update_data = '{where:{id:%s}, data:{is_active:true, state: "%s"}}' % (pickId, state)
         return update_pick_mutation(update_data, gql_client)
     else:
         print("query picks failed")
