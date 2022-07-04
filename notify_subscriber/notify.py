@@ -137,7 +137,6 @@ def notify_processor(content):
         print("no required data for notify")
         return False
     members = query_members(senderId, type_str, obj, object_id)
-    print(members)
     if members is False:
         return False
     members = remove_same_member_sender(members, senderId)
@@ -150,6 +149,6 @@ def notify_processor(content):
 
 if __name__ == '__main__':
 
-    content ={ 'action': 'add_collection', 'collectionId': '26', 'memberId': '2' }
-    print(notify_processor(content))
+    # content =
+    # print(notify_processor(content))
     print("done")
