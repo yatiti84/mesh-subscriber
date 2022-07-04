@@ -2,10 +2,8 @@ import os
 from datetime import datetime
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
-from query_collection import collection_creator, collection_follower, collection_creator_follower, collection_picker, collection_comment_member
-from query_comment import comment_creator, comment_picker, comment_member
-from query_story import story_picker, story_comment_member
-
+from query_collection import collection_follower, collection_creator_follower
+from query import creator, picker, commenter
 
 def remove_same_member_sender(members, senderId):
     members = set(members)
@@ -63,26 +61,26 @@ def query_members(senderId, type_str, obj, object_id):
         if obj == 'member':
             return [object_id]
         elif obj == 'collection':
-            return collection_creator(object_id, gql_client)
+            return creator(gql_client, 'collection', 'creator', object_id)
         else:
             print("follow objective not exists.")
 
     elif type_str == 'comment':
         if obj == 'story':
-            story_pickers = story_picker(object_id, gql_client)
-            story_comment_members = story_comment_member(object_id, gql_client)
+            story_pickers = picker(gql_client, 'story', object_id)
+            story_comment_members = commenter(gql_client, 'story', object_id)
             # story_picker and story_comment_member could be empty list
             return story_pickers + story_comment_members if isinstance(story_pickers, list) and isinstance(story_comment_members, list) else False
 
         elif obj == 'comment':
-            comment_creators = comment_creator(object_id, gql_client)
-            comment_pickers = comment_picker(object_id, gql_client)
-            comment_members = comment_member(object_id, gql_client)
+            comment_creators = creator(gql_client, 'comment', 'member', object_id)
+            comment_pickers = picker(gql_client, 'comment', object_id)
+            comment_members = commenter(gql_client, 'root', object_id)
             return comment_creators + comment_pickers + comment_members if comment_creators and isinstance(comment_pickers, list) and isinstance(comment_members, list) else False
         elif obj == 'collection':
-            collection_creators = collection_creator(object_id, gql_client)
-            collection_pickers = collection_picker(object_id, gql_client)
-            collection_comment_members = collection_comment_member(object_id, gql_client)
+            collection_creators = creator(gql_client, 'collection', 'creator', object_id)
+            collection_pickers = picker(gql_client, 'collection', object_id)
+            collection_comment_members = commenter(gql_client, list_name='collection', targetId=object_id)
             return collection_creators + collection_pickers + collection_comment_members if collection_creators and isinstance(collection_pickers, list) and isinstance(collection_comment_members, list) else False
 
         else:
@@ -90,16 +88,16 @@ def query_members(senderId, type_str, obj, object_id):
 
     elif type_str == 'pick':
         if obj == 'comment':
-            return comment_creator(object_id, gql_client)
+            return creator(gql_client, 'comment', 'member', object_id)
         elif obj == 'collection':
-            collection_creators = collection_creator(object_id, gql_client)
+            collection_creators = creator(gql_client, 'collection', 'creator', object_id)
             collection_followers = collection_follower(object_id, gql_client)
             # collection__creator must exists or this is a query error # collection_follower could be a empty list
             return collection_creators + collection_followers if collection_creators and isinstance(collection_followers, list) else False
         else:
             print("pick objective not exists.")
     elif type_str == 'like':
-        return comment_creator(object_id, gql_client)
+        return creator(gql_client, 'comment', 'member', object_id)
     elif type_str == 'create_collection':
         return collection_creator_follower(senderId, gql_client)
     else:
@@ -122,7 +120,7 @@ def notify_processor(content):
         type_str = 'create_collection'
         obj = 'collection'
     else:
-        obj = False
+        return False
     # object_id is targetId or commentId or storyId.
     if 'targetId' in content and content['targetId']:
         object_id = content['targetId']
@@ -133,17 +131,18 @@ def notify_processor(content):
     elif'collectionId' in content and content['collectionId']:
         object_id = content['collectionId']
     else:
-        object_id = False
+        return  False
     # examination of conetent data validation
-    if not(senderId and type_str and obj and object_id):
+    if not(senderId and type_str):
         print("no required data for notify")
         return False
     members = query_members(senderId, type_str, obj, object_id)
+    print(members)
+    if members is False:
+        return False
     members = remove_same_member_sender(members, senderId)
     if members:
         return create_notify(members, senderId, type_str, obj, object_id)
-    if members is False:
-        return False
     else:
         print("No members.")
         return True
@@ -151,6 +150,6 @@ def notify_processor(content):
 
 if __name__ == '__main__':
 
-    # content =
-    # print(notify_processor(content))
+    content ={ 'action': 'add_collection', 'collectionId': '26', 'memberId': '2' }
+    print(notify_processor(content))
     print("done")
