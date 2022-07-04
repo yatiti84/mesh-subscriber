@@ -1,6 +1,6 @@
 from gql import gql
 
-def query_story_picker(storyId, gql_client):
+def story_picker(storyId, gql_client):
     membersId = []
     story_picker = '''
     query{
@@ -11,7 +11,6 @@ def query_story_picker(storyId, gql_client):
         }
     }'''% storyId
     result = gql_client.execute(gql(story_picker))
-    print(result)
     if isinstance(result,dict) and 'picks' in result:
         picks = result['picks']
         if isinstance(picks,list):
@@ -25,7 +24,7 @@ def query_story_picker(storyId, gql_client):
     return False
 
 
-def query_story_comment_member(storyId, gql_client):
+def story_comment_member(storyId, gql_client):
     membersId = []
     story_comment_member = '''
     query{
@@ -36,7 +35,6 @@ def query_story_comment_member(storyId, gql_client):
         }
     }'''% storyId
     result = gql_client.execute(gql(story_comment_member))
-    print(result)
     if isinstance(result,dict) and 'comments' in result:
         comments = result['comments']
         if isinstance(comments,list):

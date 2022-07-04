@@ -2,9 +2,9 @@ import os
 from datetime import datetime
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
-from query_collection import query_collection_creator, query_collection_follower, query_collection_creator_follower, query_collection_picker, query_collection_comment_member
-from query_comment import query_comment_creator, query_comment_picker, query_comment_member
-from query_story import query_story_picker, query_story_comment_member
+from query_collection import collection_creator, collection_follower, collection_creator_follower, collection_picker, collection_comment_member
+from query_comment import comment_creator, comment_picker, comment_member
+from query_story import story_picker, story_comment_member
 
 
 def remove_same_member_sender(members, senderId):
@@ -52,7 +52,6 @@ def create_notify(members, senderId, type_str, obj, objectiveId):
         }
     }''' % mutation_datas
     result = gql_client.execute(gql(mutation))
-    print(result)
     if isinstance(result, dict) and 'createNotifies' in result:
         if isinstance(result['createNotifies'], list) and result['createNotifies']:
             return True
@@ -64,58 +63,57 @@ def query_members(senderId, type_str, obj, object_id):
         if obj == 'member':
             return [object_id]
         elif obj == 'collection':
-            return query_collection_creator(object_id, gql_client)
+            return collection_creator(object_id, gql_client)
         else:
             print("follow objective not exists.")
 
     elif type_str == 'comment':
         if obj == 'story':
-            story_picker = query_story_picker(object_id, gql_client)
-            story_comment_member = query_story_comment_member(object_id, gql_client)
+            story_pickers = story_picker(object_id, gql_client)
+            story_comment_members = story_comment_member(object_id, gql_client)
             # story_picker and story_comment_member could be empty list
-            return story_picker + story_comment_member if isinstance(story_picker, list) and isinstance(story_comment_member, list) else False
+            return story_pickers + story_comment_members if isinstance(story_pickers, list) and isinstance(story_comment_members, list) else False
 
         elif obj == 'comment':
-            comment__creator = query_comment_creator(object_id, gql_client)
-            comment_picker = query_comment_picker(object_id, gql_client)
-            comment_member = query_comment_member(object_id, gql_client)
-            return comment__creator + comment_picker + comment_member if comment__creator and isinstance(comment_picker, list) and isinstance(comment_member, list) else False
+            comment_creators = comment_creator(object_id, gql_client)
+            comment_pickers = comment_picker(object_id, gql_client)
+            comment_members = comment_member(object_id, gql_client)
+            return comment_creators + comment_pickers + comment_members if comment_creators and isinstance(comment_pickers, list) and isinstance(comment_members, list) else False
         elif obj == 'collection':
-            collection__creator = query_collection_creator(object_id, gql_client)
-            collection__picker = query_collection_picker(object_id, gql_client)
-            collection_comment_member = query_collection_comment_member(object_id, gql_client)
-            return collection__creator + collection__picker + collection_comment_member if collection__creator and isinstance(collection__picker, list) and isinstance(collection_comment_member, list) else False
+            collection_creators = collection_creator(object_id, gql_client)
+            collection_pickers = collection_picker(object_id, gql_client)
+            collection_comment_members = collection_comment_member(object_id, gql_client)
+            return collection_creators + collection_pickers + collection_comment_members if collection_creators and isinstance(collection_pickers, list) and isinstance(collection_comment_members, list) else False
 
         else:
             print('comment objective not exists')
 
     elif type_str == 'pick':
         if obj == 'comment':
-            return query_comment_creator(object_id, gql_client)
+            return comment_creator(object_id, gql_client)
         elif obj == 'collection':
-            collection__creator = query_collection_creator(object_id, gql_client)
-            collection_follower = query_collection_follower(object_id, gql_client)
+            collection_creators = collection_creator(object_id, gql_client)
+            collection_followers = collection_follower(object_id, gql_client)
             # collection__creator must exists or this is a query error # collection_follower could be a empty list
-            return collection__creator + collection_follower if collection__creator and isinstance(collection_follower, list) else False
+            return collection_creators + collection_followers if collection_creators and isinstance(collection_followers, list) else False
         else:
             print("pick objective not exists.")
     elif type_str == 'like':
-        return query_comment_creator(object_id, gql_client)
+        return comment_creator(object_id, gql_client)
     elif type_str == 'create_collection':
-        return query_collection_creator_follower(senderId, gql_client)
+        return collection_creator_follower(senderId, gql_client)
     else:
         print("action type not exists.")
         return False
-
 
 def notify_processor(content):
     gql_endpoint = os.environ['GQL_ENDPOINT']
     gql_transport = AIOHTTPTransport(url=gql_endpoint)
     global gql_client
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
+    
     senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
     type_str = content['action'].split('_')[-1] if 'action' in content and content['action'] else False
-
     if 'objective' in content and content['objective']:
         obj = content['objective']
     elif type_str == 'like':
@@ -123,7 +121,6 @@ def notify_processor(content):
     elif type_str == 'collection':
         type_str = 'create_collection'
         obj = 'collection'
-
     else:
         obj = False
     # object_id is targetId or commentId or storyId.
@@ -143,10 +140,8 @@ def notify_processor(content):
         return False
     members = query_members(senderId, type_str, obj, object_id)
     members = remove_same_member_sender(members, senderId)
-    print(members)
     if members:
         return create_notify(members, senderId, type_str, obj, object_id)
-
     if members is False:
         return False
     else:

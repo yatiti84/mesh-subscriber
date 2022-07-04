@@ -1,6 +1,6 @@
 from gql import gql
 
-def query_comment_creator(commentId, gql_client):
+def comment_creator(commentId, gql_client):
     membersId = []
     comment_creator = '''
     query{
@@ -11,7 +11,6 @@ def query_comment_creator(commentId, gql_client):
         }
     }'''% commentId
     result = gql_client.execute(gql(comment_creator))
-    print(result)
     if isinstance(result,dict) and 'comment' in result:
         comment = result['comment']
         if isinstance(comment,dict) and 'member' in comment:
@@ -23,7 +22,7 @@ def query_comment_creator(commentId, gql_client):
         print("comment not found.")
     return False
 
-def query_comment_picker(commentId, gql_client):
+def comment_picker(commentId, gql_client):
     membersId = []
     comment_picker = '''
     query{
@@ -34,7 +33,6 @@ def query_comment_picker(commentId, gql_client):
         }
     }'''% commentId
     result = gql_client.execute(gql(comment_picker))
-    print(result)
     if isinstance(result,dict) and 'picks' in result:
         picks = result['picks']
         if isinstance(picks,list):
@@ -48,7 +46,7 @@ def query_comment_picker(commentId, gql_client):
     return False
 
 
-def query_comment_member(commentId, gql_client):
+def comment_member(commentId, gql_client):
     membersId = []
     comment_member = '''
     query{
@@ -59,7 +57,6 @@ def query_comment_member(commentId, gql_client):
         }
     }'''% commentId
     result = gql_client.execute(gql(comment_member))
-    print(result)
     if isinstance(result,dict) and 'comments' in result:
         comments = result['comments']
         if isinstance(comments,list):

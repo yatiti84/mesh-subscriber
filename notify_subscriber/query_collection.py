@@ -1,7 +1,7 @@
 from gql import gql
 
  
-def query_collection_creator(collectionId, gql_client):
+def collection_creator(collectionId, gql_client):
     collection_creator = '''
     query{
         collection(where:{id:"%s"}){
@@ -11,7 +11,6 @@ def query_collection_creator(collectionId, gql_client):
         }
     }'''% collectionId
     result = gql_client.execute(gql(collection_creator))
-    print(result)
     if isinstance(result,dict) and 'collection' in result:
         collection = result['collection']
         if isinstance(collection,dict) and 'creator' in collection:
@@ -21,7 +20,7 @@ def query_collection_creator(collectionId, gql_client):
     else:
         print("Collection not found.")
     return False
-def query_collection_follower(collectionId, gql_client):
+def collection_follower(collectionId, gql_client):
     membersId = []
     collection_follower = '''
         query{
@@ -30,7 +29,6 @@ def query_collection_follower(collectionId, gql_client):
                 }
         }'''% collectionId
     result = gql_client.execute(gql(collection_follower))
-    print(result)
     if isinstance(result,dict) and 'members' in result:
         members = result['members']
         if isinstance(members,list):
@@ -44,7 +42,7 @@ def query_collection_follower(collectionId, gql_client):
     print("collection_follower query error")
     return False
 
-def query_collection_creator_follower(senderId, gql_client):
+def collection_creator_follower(senderId, gql_client):
     membersId = []
     collection_creator_follower = '''
     query{
@@ -55,7 +53,6 @@ def query_collection_creator_follower(senderId, gql_client):
         }
     }''' % senderId
     result = gql_client.execute(gql(collection_creator_follower))
-    print(result)
     if isinstance(result,dict) and 'member' in result:
         member = result['member']
         if isinstance(member,dict) and 'follower' in member:
@@ -73,7 +70,7 @@ def query_collection_creator_follower(senderId, gql_client):
         print("collection_creator_follower query error.")
     return False
 
-def query_collection_picker(collectionId, gql_client):
+def collection_picker(collectionId, gql_client):
     membersId = []
     collection_picker = '''
     query{
@@ -84,7 +81,6 @@ def query_collection_picker(collectionId, gql_client):
         }
     }'''% collectionId
     result = gql_client.execute(gql(collection_picker))
-    print(result)
     if isinstance(result,dict) and 'picks' in result:
         picks = result['picks']
         if isinstance(picks,list):
@@ -97,7 +93,7 @@ def query_collection_picker(collectionId, gql_client):
     print("collection_picker query error")
     return False
 
-def query_collection_comment_member(collectionId, gql_client):
+def collection_comment_member(collectionId, gql_client):
     membersId = []
     collection_comment_member = '''
         query{
@@ -109,7 +105,6 @@ def query_collection_comment_member(collectionId, gql_client):
             }
     }'''% collectionId
     result = gql_client.execute(gql(collection_comment_member))
-    print(result)
     if isinstance(result,dict) and 'comments' in result:
         comments = result['comments']
         if isinstance(comments,list):
