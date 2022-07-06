@@ -86,7 +86,7 @@ def add_pick_mutatioin(content, gql_client):
         return False
 
 
-def pick_and_comment_mutation(content, gql_client):
+def add_pick_and_comment_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     obj = content['objective'] if 'objective' in content and content['objective'] else False
@@ -114,7 +114,7 @@ def pick_and_comment_mutation(content, gql_client):
     return create_pick_mutation(memberId, obj, targetId, state, published_date, pick_comment, gql_client)
 
 
-def unpick_mutation(content, gql_client):
+def rm_pick_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     obj = content['objective'] if 'objective' in content and content['objective'] else False
@@ -156,10 +156,10 @@ def pick_handler(content, gql_client):
 
     if content['action'] == 'add_pick':
         return add_pick_mutatioin(content, gql_client)
-    elif content['action'] == 'pick_and_comment':
-        return pick_and_comment_mutation(content, gql_client)
-    elif content['action'] == 'unpick':
-        return unpick_mutation(content, gql_client)
+    elif content['action'] == 'add_pick_and_comment':
+        return add_pick_and_comment_mutation(content, gql_client)
+    elif content['action'] == 'remove_pick':
+        return rm_pick_mutation(content, gql_client)
     else:
         print("action not exitsts")
         return False

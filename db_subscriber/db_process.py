@@ -30,4 +30,7 @@ def assign_action_handler(content):
     
     
 
-
+if __name__ == '__main__':
+    # content = 
+    # print(assign_action_handler(content))
+    print("done")

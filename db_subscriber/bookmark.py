@@ -62,7 +62,7 @@ def add_bookmark_mutation(content, gql_client):
     return True if isinstance(result, dict) and 'createPick' in result or 'updatePicks' else False
 
 
-def remove_bookmark_mutation(content, gql_client):
+def rm_bookmark_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
     storyId = content['storyId'] if 'storyId' in content and content['storyId'] else False
 
@@ -101,7 +101,7 @@ def bookmark_handler(content, gql_client):
         return add_bookmark_mutation(content, gql_client)
 
     elif content['action'] == 'remove_bookmark':
-        return remove_bookmark_mutation(content, gql_client)
+        return rm_bookmark_mutation(content, gql_client)
     else:
         print("action not exitsts")
         return False
