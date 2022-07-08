@@ -96,7 +96,7 @@ def query_members(senderId, type_str, obj, object_id):
             return collection_creators + collection_followers if collection_creators and isinstance(collection_followers, list) else False
         else:
             print("pick objective not exists.")
-    elif type_str == 'like':
+    elif type_str == 'heart':
         return creator(gql_client, 'comment', 'member', object_id)
     elif type_str == 'create_collection':
         return collection_creator_follower(senderId, gql_client)
@@ -115,6 +115,7 @@ def notify_processor(content):
     if 'objective' in content and content['objective']:
         obj = content['objective']
     elif type_str == 'like':
+        type_str = 'heart'
         obj = 'comment'
     elif type_str == 'collection':
         type_str = 'create_collection'
