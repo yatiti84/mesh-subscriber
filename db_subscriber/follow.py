@@ -3,7 +3,7 @@ from gql import gql
 
 def follow_handler(content, gql_client):
 
-    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] and int(content['memberId']) > 0 else False
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     obj = content['objective'] if 'objective' in content and content['objective'] else False
 

@@ -3,7 +3,7 @@ from gql import gql
 
 
 def add_comment_mutation(content, gql_client):
-    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] and int(content['memberId']) > 0 else False
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     state = content['state'] if 'state' in content and content['state'] else False
     comment_content = content['content'] if 'content' in content and content['content'] else False

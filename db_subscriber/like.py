@@ -2,7 +2,7 @@ from gql import gql
 
 
 def like_handler(content, gql_client):
-    memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    memberId = content['memberId'] if 'memberId' in content and content['memberId'] and int(content['memberId']) > 0 else False
     commentId = content['commentId'] if 'commentId' in content and content['commentId'] else False
     
     if not(memberId and commentId):
