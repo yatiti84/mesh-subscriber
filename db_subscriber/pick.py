@@ -64,6 +64,9 @@ def update_pick_mutation(update_data, gql_client):
 
 def add_pick_mutatioin(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(memberId) < 0:
+        print("member is visitor")
+        return True
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     obj = content['objective'] if 'objective' in content and content['objective'] else False
     state = content['state'] if 'state' in content and content['state'] else False
@@ -88,6 +91,9 @@ def add_pick_mutatioin(content, gql_client):
 
 def add_pick_and_comment_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(memberId) < 0:
+        print("member is visitor")
+        return True
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     obj = content['objective'] if 'objective' in content and content['objective'] else False
     state = content['state'] if 'state' in content and content['state'] else False
@@ -116,6 +122,9 @@ def add_pick_and_comment_mutation(content, gql_client):
 
 def rm_pick_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(memberId) < 0:
+        print("member is visitor")
+        return True
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
     obj = content['objective'] if 'objective' in content and content['objective'] else False
 

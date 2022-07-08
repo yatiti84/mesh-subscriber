@@ -18,6 +18,9 @@ def check_pick_exists(memberId, storyId, gql_client):
 
 def add_bookmark_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(memberId) < 0:
+        print("member is visitor")
+        return True
     storyId = content['storyId'] if 'storyId' in content and content['storyId'] else False
     picked_date = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
@@ -64,6 +67,9 @@ def add_bookmark_mutation(content, gql_client):
 
 def rm_bookmark_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(memberId) < 0:
+        print("member is visitor")
+        return True
     storyId = content['storyId'] if 'storyId' in content and content['storyId'] else False
 
     if not(memberId and storyId):
