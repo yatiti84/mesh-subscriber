@@ -4,7 +4,7 @@ from gql import gql
 
 def add_comment_mutation(content, gql_client):
     memberId = content['memberId'] if 'memberId' in content and content['memberId'] else False
-    if int(memberId) > 0:
+    if int(memberId) < 0:
         print("member is visitor")
         return True
     targetId = content['targetId'] if 'targetId' in content and content['targetId'] else False
