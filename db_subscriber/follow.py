@@ -32,11 +32,11 @@ def follow_handler(content, gql_client):
     mutation = '''
     mutation{
     updateMember(where:{id:%s}, data:{%s:{%s:{id:%s}}},){
-        following{
+        %s{
         id
         }
     }
-    }''' % (memberId, obj_following, action, targetId)
+    }''' % (memberId, obj_following, action, targetId, obj_following)
     result = gql_client.execute(gql(mutation))
     if isinstance(result, dict) and 'updateMember' in result:
         follow_item = [follow_item['id'] for follow_item in result['updateMember'][obj_following]]
