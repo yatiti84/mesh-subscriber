@@ -21,16 +21,36 @@ def query_rm_comment_data(commentId):
         collection{id}
         root{id}
         }
-    }'''% commentId
+    stories(where:{comment:{some:{id:{equals:%s}}}}){ 
+        id
+        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}}, orderBy:{published_date:desc}, take:1){
+            published_date
+            } 
+        }
+    collections(where:{comment:{some:{id:{equals:%s}}}}){
+        id
+        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}}, orderBy:{published_date:desc}, take:1){
+            published_date
+            }  
+        }
+    }'''% (commentId, commentId, commentId, commentId, commentId)
     result = gql_client.execute(gql(query))
-    print(result)
-    if isinstance(result, dict) and 'comment' in result and result['comment']:
-        for key, value in result['comment'].items():
-            if value:
-                rm_comment_data[key] = value['id']
-                if value != 'member':
-                    rm_comment_data['obj'] = key
-        if len(rm_comment_data) == 3 and 'member' in rm_comment_data:
+    if isinstance(result, dict) and result:
+        if result['comment'] and 'member' in result['comment'] and result['comment']['member'] and (result['comment']['story'] or result['comment']['collection']):
+            rm_comment_data['member'] = result['comment']['member']['id']
+            if result['comment']['story']:
+                rm_comment_data['obj'] = 'story'
+                rm_comment_data['object_id'] = result['comment']['story']['id']
+            elif result['comment']['collection']:
+                rm_comment_data['obj'] = 'collection'
+                rm_comment_data['object_id'] = result['comment']['collection']['id']
+        else:
+            return False
+        if result['stories'] and result['stories'][0]['comment'] and result['stories'][0]['comment']:
+            rm_comment_data['published_date'] = result['stories'][0]['comment'][0]['published_date']
+            return rm_comment_data
+        if result['collections'] and result['collections'][0]['comment'] and result['collections'][0]['comment']:
+            rm_comment_data['published_date'] = result['collections'][0]['comment'][0]['published_date']
             return rm_comment_data
     return False
 
@@ -90,6 +110,24 @@ def delete_notify(notifyId):
     result = gql_client.execute(gql(delete_mutation))
     if isinstance(result, dict) and 'deleteNotify' in result:
         if isinstance(result['deleteNotify'], dict) and result['deleteNotify']:
+            return True
+    return False
+
+def update_notifies(notifyIds, actiondate):
+    mutation_datas = []
+    for notifyId in notifyIds:
+        mutation_data = '''{where:{id:"%s"}data:{action_date:"%s"}}''' % (notifyId, actiondate)
+        mutation_datas.append(mutation_data)
+    mutation_datas = ','.join(mutation_datas)
+    mutation = '''mutation{
+        updateNotifies(data:[%s]){
+            id
+            action_date
+        }
+    }'''% mutation_datas
+    result = gql_client.execute(gql(mutation))
+    if isinstance(result, dict) and 'updateNotifies' in result:
+        if isinstance(result['updateNotifies'], list) and result['updateNotifies']:
             return True
     return False
 
@@ -188,12 +226,11 @@ def notify_processor(content):
         return  False
     # remove_comment has different data
     if content['action'] == 'remove_comment':
-        #  query comment memberId(senderId), object_id, obj
         rm_comment_data = query_rm_comment_data(object_id)
         if rm_comment_data:
             senderId = rm_comment_data['member']
             obj = rm_comment_data['obj']
-            object_id = rm_comment_data[obj]
+            object_id = rm_comment_data['object_id']
 
     else:
         senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
@@ -213,7 +250,7 @@ def notify_processor(content):
         if not(senderId and type_str):
             print("no required data for notify")
             return False
-        
+    
     if act == 'add':
         members = query_members(senderId, type_str, obj, object_id)
         if members is False:
@@ -225,10 +262,14 @@ def notify_processor(content):
             print("No members.")
             return True
     if act == 'remove':
+        
         notifyIds = query_delete_notifyIds(senderId, type_str, obj, object_id)
         if notifyIds is False:
             return False
         if notifyIds:
+            # check is there any comment from same sender in same 
+            if type_str == 'comment'and 'published_date' in rm_comment_data:
+                return update_notifies(notifyIds, rm_comment_data['published_date'])
             for notifyId in notifyIds:
                 if delete_notify(notifyId):
                     continue
