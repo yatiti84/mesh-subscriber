@@ -25,7 +25,7 @@ def process_data():
     else: 
         return Response("{'error': 'data content with error'}", status=500, mimetype='application/json')
 
-    if 'add' in action:
+    if 'add' or 'remove' in action:
         if notify_processor(content):
             return "success"
         else:

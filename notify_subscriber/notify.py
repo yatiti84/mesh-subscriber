@@ -11,6 +11,31 @@ def remove_same_member_sender(members, senderId):
     return members
 
 
+def query_rm_comment_data(commentId):
+    rm_comment_data = {}
+    query = '''
+    query{
+    comment(where:{id:"%s"}){
+        member{id}
+        story{id}
+        collection{id}
+        root{id}
+        }
+    }'''% commentId
+    result = gql_client.execute(gql(query))
+    print(result)
+    if isinstance(result, dict) and 'comment' in result and result['comment']:
+        for key, value in result['comment'].items():
+            if value:
+                rm_comment_data[key] = value['id']
+                if value != 'member':
+                    rm_comment_data['obj'] = key
+        if len(rm_comment_data) == 3 and 'member' in rm_comment_data:
+            return rm_comment_data
+    return False
+
+
+
 def create_notify(members, senderId, type_str, obj, objectiveId):
     now_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
     mutation_datas = []
@@ -137,8 +162,10 @@ def query_delete_notifyIds(senderId, type_str, obj, object_id):
     }''' % (senderId, type_str, obj, object_id)
     result = gql_client.execute(gql(query_notifiesId))
     if isinstance(result, dict) and 'notifies' in result:
-        if isinstance(result['notifies'], list) and result['notifies']:
-            return [notifies['id']for notifies in result['notifies']]
+        if isinstance(result['notifies'], list):
+            if result['notifies']:
+                return [notifies['id']for notifies in result['notifies']]
+            return []
     return False
 
 def notify_processor(content):
@@ -148,20 +175,6 @@ def notify_processor(content):
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
     act, type_str = content['action'].split('_') if 'action' in content and content['action'] else False
-    senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
-    if int(senderId) < 0: 
-        print("memberId is visitor")
-        return True
-    if 'objective' in content and content['objective']:
-        obj = content['objective']
-    elif type_str == 'like':
-        type_str = 'heart'
-        obj = 'comment'
-    elif type_str == 'collection':
-        type_str = 'create_collection'
-        obj = 'collection'
-    else:
-        return False
     # object_id is targetId or commentId or storyId.
     if 'targetId' in content and content['targetId']:
         object_id = content['targetId']
@@ -173,17 +186,54 @@ def notify_processor(content):
         object_id = content['collectionId']
     else:
         return  False
-    if not(senderId and type_str):
-        print("no required data for notify")
-        return False
-    members = query_members(senderId, type_str, obj, object_id)
-    if members is False:
-        return False
-    members = remove_same_member_sender(members, senderId)
-    if members:
-        return create_notify(members, senderId, type_str, obj, object_id)
+    # remove_comment has different data
+    if content['action'] == 'remove_comment':
+        #  query comment memberId(senderId), object_id, obj
+        rm_comment_data = query_rm_comment_data(object_id)
+        if rm_comment_data:
+            senderId = rm_comment_data['member']
+            obj = rm_comment_data['obj']
+            object_id = rm_comment_data[obj]
+
     else:
-        print("No members.")
+        senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+        if int(senderId) < 0:
+            print("memberId is visitor")
+            return True
+        if 'objective' in content and content['objective']:
+            obj = content['objective']
+        elif type_str == 'like':
+            type_str = 'heart'
+            obj = 'comment'
+        elif type_str == 'collection':
+            type_str = 'create_collection'
+            obj = 'collection'
+        else:
+            return False
+        if not(senderId and type_str):
+            print("no required data for notify")
+            return False
+        
+    if act == 'add':
+        members = query_members(senderId, type_str, obj, object_id)
+        if members is False:
+            return False
+        members = remove_same_member_sender(members, senderId)
+        if members:
+            return create_notify(members, senderId, type_str, obj, object_id)
+        else:
+            print("No members.")
+            return True
+    if act == 'remove':
+        notifyIds = query_delete_notifyIds(senderId, type_str, obj, object_id)
+        if notifyIds is False:
+            return False
+        if notifyIds:
+            for notifyId in notifyIds:
+                if delete_notify(notifyId):
+                    continue
+                else:
+                    return False 
         return True
 
 
