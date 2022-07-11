@@ -62,6 +62,8 @@ def query_members(senderId, type_str, obj, object_id):
             return [object_id]
         elif obj == 'collection':
             return creator(gql_client, 'collection', 'creator', object_id)
+        elif obj == 'publisher':
+            return []
         else:
             print("follow objective not exists.")
 
@@ -94,6 +96,8 @@ def query_members(senderId, type_str, obj, object_id):
             collection_followers = collection_follower(object_id, gql_client)
             # collection__creator must exists or this is a query error # collection_follower could be a empty list
             return collection_creators + collection_followers if collection_creators and isinstance(collection_followers, list) else False
+        elif obj == 'story':
+            return []
         else:
             print("pick objective not exists.")
     elif type_str == 'heart':
@@ -111,7 +115,8 @@ def notify_processor(content):
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
     senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
-    if int(senderId) < 0: #  memberId is visitor
+    if int(senderId) < 0: 
+        print("memberId is visitor")
         return True
     type_str = content['action'].split('_')[-1] if 'action' in content and content['action'] else False
     if 'objective' in content and content['objective']:
@@ -127,11 +132,11 @@ def notify_processor(content):
     # object_id is targetId or commentId or storyId.
     if 'targetId' in content and content['targetId']:
         object_id = content['targetId']
-    elif'commentId' in content and content['commentId']:
+    elif 'commentId' in content and content['commentId']:
         object_id = content['commentId']
-    elif'storyId' in content and content['storyId']:
+    elif 'storyId' in content and content['storyId']:
         object_id = content['storyId']
-    elif'collectionId' in content and content['collectionId']:
+    elif 'collectionId' in content and content['collectionId']:
         object_id = content['collectionId']
     else:
         return  False
