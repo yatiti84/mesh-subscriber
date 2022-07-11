@@ -11,6 +11,51 @@ def remove_same_member_sender(members, senderId):
     return members
 
 
+def query_rm_comment_data(commentId):
+    rm_comment_data = {}
+    query = '''
+    query{
+    comment(where:{id:"%s"}){
+        member{id}
+        story{id}
+        collection{id}
+        root{id}
+        }
+    stories(where:{comment:{some:{id:{equals:%s}}}}){ 
+        id
+        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}}, orderBy:{published_date:desc}, take:1){
+            published_date
+            } 
+        }
+    collections(where:{comment:{some:{id:{equals:%s}}}}){
+        id
+        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}}, orderBy:{published_date:desc}, take:1){
+            published_date
+            }  
+        }
+    }'''% (commentId, commentId, commentId, commentId, commentId)
+    result = gql_client.execute(gql(query))
+    if isinstance(result, dict) and result:
+        if result['comment'] and 'member' in result['comment'] and result['comment']['member'] and (result['comment']['story'] or result['comment']['collection']):
+            rm_comment_data['member'] = result['comment']['member']['id']
+            if result['comment']['story']:
+                rm_comment_data['obj'] = 'story'
+                rm_comment_data['object_id'] = result['comment']['story']['id']
+            elif result['comment']['collection']:
+                rm_comment_data['obj'] = 'collection'
+                rm_comment_data['object_id'] = result['comment']['collection']['id']
+        else:
+            return False
+        if result['stories'] and result['stories'][0]['comment'] and result['stories'][0]['comment']:
+            rm_comment_data['published_date'] = result['stories'][0]['comment'][0]['published_date']
+            return rm_comment_data
+        if result['collections'] and result['collections'][0]['comment'] and result['collections'][0]['comment']:
+            rm_comment_data['published_date'] = result['collections'][0]['comment'][0]['published_date']
+            return rm_comment_data
+    return False
+
+
+
 def create_notify(members, senderId, type_str, obj, objectiveId):
     now_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
     mutation_datas = []
@@ -55,6 +100,37 @@ def create_notify(members, senderId, type_str, obj, objectiveId):
             return True
     return False
 
+def delete_notify(notifyId):
+    delete_mutation = '''
+    mutation{
+        deleteNotify(where:{id:"%s"}){
+            id
+        }
+    }''' % notifyId
+    result = gql_client.execute(gql(delete_mutation))
+    if isinstance(result, dict) and 'deleteNotify' in result:
+        if isinstance(result['deleteNotify'], dict) and result['deleteNotify']:
+            return True
+    return False
+
+def update_notifies(notifyIds, actiondate):
+    mutation_datas = []
+    for notifyId in notifyIds:
+        mutation_data = '''{where:{id:"%s"}data:{action_date:"%s"}}''' % (notifyId, actiondate)
+        mutation_datas.append(mutation_data)
+    mutation_datas = ','.join(mutation_datas)
+    mutation = '''mutation{
+        updateNotifies(data:[%s]){
+            id
+            action_date
+        }
+    }'''% mutation_datas
+    result = gql_client.execute(gql(mutation))
+    if isinstance(result, dict) and 'updateNotifies' in result:
+        if isinstance(result['updateNotifies'], list) and result['updateNotifies']:
+            return True
+    return False
+
 
 def query_members(senderId, type_str, obj, object_id):
     if type_str == 'follow':
@@ -68,6 +144,14 @@ def query_members(senderId, type_str, obj, object_id):
             print("follow objective not exists.")
 
     elif type_str == 'comment':
+        # delete same notify before create
+        notifiesId = query_delete_notifyIds(senderId, type_str, obj, object_id)
+        if notifiesId:
+            for notifyId in notifiesId:
+                if delete_notify(notifyId):
+                    continue
+                else:
+                    return False
         if obj == 'story':
             story_pickers = picker(gql_client, 'story', object_id)
             story_comment_members = commenter(gql_client, 'story', object_id)
@@ -107,6 +191,20 @@ def query_members(senderId, type_str, obj, object_id):
     else:
         print("action type not exists.")
         return False
+def query_delete_notifyIds(senderId, type_str, obj, object_id):
+    query_notifiesId = '''
+    query{
+        notifies(where:{sender:{id:{equals:"%s"}}, type:{equals:"%s"}, objective:{equals:"%s"}, object_id:{equals:%s}}){
+            id
+        }
+    }''' % (senderId, type_str, obj, object_id)
+    result = gql_client.execute(gql(query_notifiesId))
+    if isinstance(result, dict) and 'notifies' in result:
+        if isinstance(result['notifies'], list):
+            if result['notifies']:
+                return [notifies['id']for notifies in result['notifies']]
+            return []
+    return False
 
 def notify_processor(content):
     gql_endpoint = os.environ['GQL_ENDPOINT']
@@ -114,21 +212,7 @@ def notify_processor(content):
     global gql_client
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
-    senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
-    if int(senderId) < 0: 
-        print("memberId is visitor")
-        return True
-    type_str = content['action'].split('_')[-1] if 'action' in content and content['action'] else False
-    if 'objective' in content and content['objective']:
-        obj = content['objective']
-    elif type_str == 'like':
-        type_str = 'heart'
-        obj = 'comment'
-    elif type_str == 'collection':
-        type_str = 'create_collection'
-        obj = 'collection'
-    else:
-        return False
+    act, type_str = content['action'].split('_') if 'action' in content and content['action'] else False
     # object_id is targetId or commentId or storyId.
     if 'targetId' in content and content['targetId']:
         object_id = content['targetId']
@@ -140,18 +224,57 @@ def notify_processor(content):
         object_id = content['collectionId']
     else:
         return  False
-    # examination of conetent data validation
-    if not(senderId and type_str):
-        print("no required data for notify")
-        return False
-    members = query_members(senderId, type_str, obj, object_id)
-    if members is False:
-        return False
-    members = remove_same_member_sender(members, senderId)
-    if members:
-        return create_notify(members, senderId, type_str, obj, object_id)
+    # remove_comment has different data
+    if content['action'] == 'remove_comment':
+        rm_comment_data = query_rm_comment_data(object_id)
+        if rm_comment_data:
+            senderId = rm_comment_data['member']
+            obj = rm_comment_data['obj']
+            object_id = rm_comment_data['object_id']
+
     else:
-        print("No members.")
+        senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+        if int(senderId) < 0:
+            print("memberId is visitor")
+            return True
+        if 'objective' in content and content['objective']:
+            obj = content['objective']
+        elif type_str == 'like':
+            type_str = 'heart'
+            obj = 'comment'
+        elif type_str == 'collection':
+            type_str = 'create_collection'
+            obj = 'collection'
+        else:
+            return False
+        if not(senderId and type_str):
+            print("no required data for notify")
+            return False
+    
+    if act == 'add':
+        members = query_members(senderId, type_str, obj, object_id)
+        if members is False:
+            return False
+        members = remove_same_member_sender(members, senderId)
+        if members:
+            return create_notify(members, senderId, type_str, obj, object_id)
+        else:
+            print("No members.")
+            return True
+    if act == 'remove':
+        
+        notifyIds = query_delete_notifyIds(senderId, type_str, obj, object_id)
+        if notifyIds is False:
+            return False
+        if notifyIds:
+            # check is there any comment from same sender in same 
+            if type_str == 'comment'and 'published_date' in rm_comment_data:
+                return update_notifies(notifyIds, rm_comment_data['published_date'])
+            for notifyId in notifyIds:
+                if delete_notify(notifyId):
+                    continue
+                else:
+                    return False 
         return True
 
 
