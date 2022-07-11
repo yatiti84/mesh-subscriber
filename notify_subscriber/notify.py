@@ -216,11 +216,11 @@ def notify_processor(content):
     # object_id is targetId or commentId or storyId.
     if 'targetId' in content and content['targetId']:
         object_id = content['targetId']
-    elif'commentId' in content and content['commentId']:
+    elif 'commentId' in content and content['commentId']:
         object_id = content['commentId']
-    elif'storyId' in content and content['storyId']:
+    elif 'storyId' in content and content['storyId']:
         object_id = content['storyId']
-    elif'collectionId' in content and content['collectionId']:
+    elif 'collectionId' in content and content['collectionId']:
         object_id = content['collectionId']
     else:
         return  False
