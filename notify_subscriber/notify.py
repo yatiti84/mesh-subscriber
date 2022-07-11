@@ -55,6 +55,19 @@ def create_notify(members, senderId, type_str, obj, objectiveId):
             return True
     return False
 
+def delete_notify(notifyId):
+    delete_mutation = '''
+    mutation{
+        deleteNotify(where:{id:"%s"}){
+            id
+        }
+    }''' % notifyId
+    result = gql_client.execute(gql(delete_mutation))
+    if isinstance(result, dict) and 'deleteNotify' in result:
+        if isinstance(result['deleteNotify'], dict) and result['deleteNotify']:
+            return True
+    return False
+
 
 def query_members(senderId, type_str, obj, object_id):
     if type_str == 'follow':
@@ -62,10 +75,20 @@ def query_members(senderId, type_str, obj, object_id):
             return [object_id]
         elif obj == 'collection':
             return creator(gql_client, 'collection', 'creator', object_id)
+        elif obj == 'publisher':
+            return []
         else:
             print("follow objective not exists.")
 
     elif type_str == 'comment':
+        # delete same notify before create
+        notifiesId = query_delete_notifyIds(senderId, type_str, obj, object_id)
+        if notifiesId:
+            for notifyId in notifiesId:
+                if delete_notify(notifyId):
+                    continue
+                else:
+                    return False
         if obj == 'story':
             story_pickers = picker(gql_client, 'story', object_id)
             story_comment_members = commenter(gql_client, 'story', object_id)
@@ -94,6 +117,8 @@ def query_members(senderId, type_str, obj, object_id):
             collection_followers = collection_follower(object_id, gql_client)
             # collection__creator must exists or this is a query error # collection_follower could be a empty list
             return collection_creators + collection_followers if collection_creators and isinstance(collection_followers, list) else False
+        elif obj == 'story':
+            return []
         else:
             print("pick objective not exists.")
     elif type_str == 'heart':
@@ -103,6 +128,18 @@ def query_members(senderId, type_str, obj, object_id):
     else:
         print("action type not exists.")
         return False
+def query_delete_notifyIds(senderId, type_str, obj, object_id):
+    query_notifiesId = '''
+    query{
+        notifies(where:{sender:{id:{equals:"%s"}}, type:{equals:"%s"}, objective:{equals:"%s"}, object_id:{equals:%s}}){
+            id
+        }
+    }''' % (senderId, type_str, obj, object_id)
+    result = gql_client.execute(gql(query_notifiesId))
+    if isinstance(result, dict) and 'notifies' in result:
+        if isinstance(result['notifies'], list) and result['notifies']:
+            return [notifies['id']for notifies in result['notifies']]
+    return False
 
 def notify_processor(content):
     gql_endpoint = os.environ['GQL_ENDPOINT']
@@ -110,10 +147,11 @@ def notify_processor(content):
     global gql_client
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
+    act, type_str = content['action'].split('_') if 'action' in content and content['action'] else False
     senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
-    if int(senderId) < 0: #  memberId is visitor
+    if int(senderId) < 0: 
+        print("memberId is visitor")
         return True
-    type_str = content['action'].split('_')[-1] if 'action' in content and content['action'] else False
     if 'objective' in content and content['objective']:
         obj = content['objective']
     elif type_str == 'like':
@@ -135,7 +173,6 @@ def notify_processor(content):
         object_id = content['collectionId']
     else:
         return  False
-    # examination of conetent data validation
     if not(senderId and type_str):
         print("no required data for notify")
         return False
