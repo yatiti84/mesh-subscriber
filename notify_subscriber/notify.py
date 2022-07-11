@@ -111,6 +111,8 @@ def notify_processor(content):
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
     senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(senderId) < 0: #  memberId is visitor
+        return True
     type_str = content['action'].split('_')[-1] if 'action' in content and content['action'] else False
     if 'objective' in content and content['objective']:
         obj = content['objective']
