@@ -11,33 +11,31 @@ def remove_same_member_sender(members, senderId):
     return members
 
 
-def query_rm_comment_data(commentId):
+def query_rm_comment_data(commentId, memberId):
     rm_comment_data = {}
     query = '''
     query{
     comment(where:{id:"%s"}){
-        member{id}
         story{id}
         collection{id}
         root{id}
         }
     stories(where:{comment:{some:{id:{equals:%s}}}}){ 
         id
-        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}}, orderBy:{published_date:desc}, take:1){
+        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}, member:{id:{equals:"%s"}}}, orderBy:{published_date:desc}, take:1){
             published_date
             } 
         }
     collections(where:{comment:{some:{id:{equals:%s}}}}){
         id
-        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}}, orderBy:{published_date:desc}, take:1){
+        comment(where:{id:{not:{equals:"%s"}}, is_active:{equals:true}, member:{id:{equals:"%s"}}}, orderBy:{published_date:desc}, take:1){
             published_date
             }  
         }
-    }'''% (commentId, commentId, commentId, commentId, commentId)
+    }'''% (commentId, commentId, commentId, memberId, commentId, commentId, memberId)
     result = gql_client.execute(gql(query))
     if isinstance(result, dict) and result:
-        if result['comment'] and 'member' in result['comment'] and result['comment']['member'] and (result['comment']['story'] or result['comment']['collection']):
-            rm_comment_data['member'] = result['comment']['member']['id']
+        if result['comment'] and (result['comment']['story'] or result['comment']['collection']):
             if result['comment']['story']:
                 rm_comment_data['obj'] = 'story'
                 rm_comment_data['object_id'] = result['comment']['story']['id']
@@ -48,11 +46,11 @@ def query_rm_comment_data(commentId):
             return False
         if result['stories'] and result['stories'][0]['comment'] and result['stories'][0]['comment']:
             rm_comment_data['published_date'] = result['stories'][0]['comment'][0]['published_date']
-            return rm_comment_data
-        if result['collections'] and result['collections'][0]['comment'] and result['collections'][0]['comment']:
+        elif result['collections'] and result['collections'][0]['comment'] and result['collections'][0]['comment']:
             rm_comment_data['published_date'] = result['collections'][0]['comment'][0]['published_date']
-            return rm_comment_data
-    return False
+        return rm_comment_data
+    else:
+        return False
 
 
 
@@ -213,6 +211,10 @@ def notify_processor(content):
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
     act, type_str = content['action'].split('_') if 'action' in content and content['action'] else False
+    senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
+    if int(senderId) < 0:
+        print("memberId is visitor")
+        return True
     # object_id is targetId or commentId or storyId.
     if 'targetId' in content and content['targetId']:
         object_id = content['targetId']
@@ -226,17 +228,12 @@ def notify_processor(content):
         return  False
     # remove_comment has different data
     if content['action'] == 'remove_comment':
-        rm_comment_data = query_rm_comment_data(object_id)
+        rm_comment_data = query_rm_comment_data(object_id, senderId)
         if rm_comment_data:
-            senderId = rm_comment_data['member']
             obj = rm_comment_data['obj']
             object_id = rm_comment_data['object_id']
 
     else:
-        senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
-        if int(senderId) < 0:
-            print("memberId is visitor")
-            return True
         if 'objective' in content and content['objective']:
             obj = content['objective']
         elif type_str == 'like':
