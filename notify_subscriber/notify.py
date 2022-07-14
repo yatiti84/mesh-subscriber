@@ -186,6 +186,26 @@ def query_members(senderId, type_str, obj, object_id):
         return creator(gql_client, 'comment', 'member', object_id)
     elif type_str == 'create_collection':
         return collection_creator_follower(senderId, gql_client)
+    elif type_str == 'pickandcomment':
+        if obj == 'story':
+            story_pickers = picker(gql_client, 'story', object_id)
+            story_comment_members = commenter(gql_client, 'story', object_id)
+            # story_picker and story_comment_member could be empty list
+            return story_pickers + story_comment_members if isinstance(story_pickers, list) and isinstance(story_comment_members, list) else False
+
+        elif obj == 'comment':
+            comment_creators = creator(gql_client, 'comment', 'member', object_id)
+            comment_pickers = picker(gql_client, 'comment', object_id)
+            comment_members = commenter(gql_client, 'root', object_id)
+            return comment_creators + comment_pickers + comment_members if comment_creators and isinstance(comment_pickers, list) and isinstance(comment_members, list) else False
+        elif obj == 'collection':
+            collection_creators = creator(gql_client, 'collection', 'creator', object_id)
+            collection_pickers = picker(gql_client, 'collection', object_id)
+            collection_comment_members = commenter(gql_client, list_name='collection', targetId=object_id)
+            collection_followers = collection_follower(object_id, gql_client)
+            return collection_creators + collection_pickers + collection_comment_members +collection_followers if collection_creators and isinstance(collection_pickers, list) and isinstance(collection_comment_members, list) and isinstance(collection_followers, list) else False
+        else:
+            print('pickandcomment objective not exists')
     else:
         print("action type not exists.")
         return False
@@ -210,7 +230,8 @@ def notify_processor(content):
     global gql_client
     gql_client = Client(transport=gql_transport, fetch_schema_from_transport=True)
     
-    act, type_str = content['action'].split('_') if 'action' in content and content['action'] else False
+    act, *type_str = tuple(content['action'].split('_')) if 'action' in content and content['action'] else False
+    type_str = "".join(type_str)
     senderId = content['memberId'] if 'memberId' in content and content['memberId'] else False
     if int(senderId) < 0:
         print("memberId is visitor")
@@ -250,6 +271,8 @@ def notify_processor(content):
     
     if act == 'add':
         members = query_members(senderId, type_str, obj, object_id)
+        if type_str == 'pickandcomment':
+            type_str = 'pick'
         if members is False:
             return False
         members = remove_same_member_sender(members, senderId)
