@@ -12,11 +12,11 @@ def process_data():
     print(req)
 
     if not req:
-        return Response("{'error': 'no Pub/Sub message received'}", status=500, mimetype='application/json')
+        return Response("{'error': 'no Pub/Sub message received'}", status=400, mimetype='application/json')
     if not isinstance(req, dict) or "message" not in req:
-        return Response("{'error': 'invalid Pub/Sub message format'}", status=500, mimetype='application/json')
+        return Response("{'error': 'invalid Pub/Sub message format'}", status=400, mimetype='application/json')
     if not isinstance(req["message"], dict) or "data" not in req["message"]:
-        return Response("{'error': 'no data in message received'}", status=500, mimetype='application/json')
+        return Response("{'error': 'no data in message received'}", status=400, mimetype='application/json')
     content = base64.b64decode(req["message"]["data"]).decode("utf-8")
     content = ast.literal_eval(content)
     print(content)
