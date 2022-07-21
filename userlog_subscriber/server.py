@@ -8,10 +8,7 @@ from flask import Flask, request, Response
 app = Flask(__name__)
 
 client = google.cloud.logging.Client()
-handler = CloudLoggingHandler(client)
-cloud_logger = logging.getLogger('userLogger')
-cloud_logger.setLevel(logging.INFO)
-cloud_logger.addHandler(handler)
+cloud_logger = client.setup_logging(logging.INFO)
 
 @app.route("/log-sub", methods=['POST'])
 def process_data():
