@@ -9,7 +9,6 @@ app = Flask(__name__)
 @app.route("/notify-sub", methods=['POST'])
 def process_data():
     req = request.get_json(silent=True)
-    print(req)
 
     if not req:
         return Response("{'error': 'no Pub/Sub message received'}", status=400, mimetype='application/json')
@@ -19,7 +18,6 @@ def process_data():
         return Response("{'error': 'no data in message received'}", status=400, mimetype='application/json')
     content = base64.b64decode(req["message"]["data"]).decode("utf-8")
     content = ast.literal_eval(content)
-    print(content)
     if 'action' in content and content['action']:
         action = content['action']
     else: 
