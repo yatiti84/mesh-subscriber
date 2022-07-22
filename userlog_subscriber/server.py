@@ -8,7 +8,7 @@ from flask import Flask, request, Response
 app = Flask(__name__)
 
 client = google.cloud.logging.Client()
-cloud_logger = client.setup_logging(log_level=logging.INFO)
+client.setup_logging(log_level=logging.INFO)
 
 @app.route("/log-sub", methods=['POST'])
 def process_data():
@@ -45,7 +45,7 @@ def process_data():
     if 'objective' in content and content['objective']:
         data['objective'] = content['objective']
 
-    cloud_logger.info(str(data))
+    logging.info(str(data))
     return "success"
     
 
