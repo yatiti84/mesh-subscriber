@@ -3,12 +3,12 @@ import google.cloud.logging
 from google.cloud.logging.handlers import CloudLoggingHandler
 import base64
 import ast
+import os
+from datetime import datetime, timedelta
 from flask import Flask, request, Response
 
 app = Flask(__name__)
 
-client = google.cloud.logging.Client()
-client.setup_logging(log_level=logging.INFO)
 
 @app.route("/log-sub", methods=['POST'])
 def process_data():
@@ -22,32 +22,51 @@ def process_data():
     content = base64.b64decode(req["message"]["data"]).decode("utf-8")
     content = ast.literal_eval(content)
     # action, memberId is must have
-    data = {}
+    now = (datetime.utcnow() + timedelta(hours = 8)).strftime("%Y.%m.%d %H:%M:%S")
     if 'action' in content and content['action']:
-        data['action'] = content['action']
+        action = content['action']
     else:
         return Response("{'error': 'parameter error: action missing'}", status=400, mimetype='application/json')
     
     if 'memberId' in content and content['memberId']:
-        data['memberId'] = content['memberId']
+        memberId = content['memberId']
     else:
         return Response("{'error': 'parameter error: memberId missing'}", status=400, mimetype='application/json')
 
     if 'targetId' in content and content['targetId']:
-        data['objId'] = content['targetId']
+        objId = content['targetId']
     elif 'commentId' in content and content['commentId']:
-        data['objId'] = content['commentId']
+        objId = content['commentId']
     elif 'storyId' in content and content['storyId']:
-        data['objId'] = content['storyId']
+        objId = content['storyId']
     elif 'collectionId' in content and content['collectionId']:
-        data['objId'] = content['collectionId']
-
-    if 'objective' in content and content['objective']:
-        data['objective'] = content['objective']
-
-    logging.info(str(data))
-    return "success"
+        objId = content['collectionId']
+    else:
+        objId = ""
     
+    if 'objective' in content and content['objective']:
+        objective = content['objective'] 
+    else:
+        objective = ""
+        
+    project_id = os.environ['project_id']
+    logger_name = f'projects/{project_id}/logs/readr-mesh-user-log'
+    resource = logging.Resource(type='global', labels={'project_id': project_id})
+    clientInfo = {'clientInfo':
+    {
+    'current-runtime-start': now,
+    'datetime': now,
+    'exit-time': now,
+    'action': action,
+    'memberId': memberId,
+    'objId': objId,
+    'objective': objective
+        }
+    }
+    logging_client = logging.Client()
+    logger = logging_client.logger(logger_name)
+    logger.log_struct(info = clientInfo, severity = "INFO", resource = resource, log_name = logger_name)
+    return "success"
 
 
 @app.route("/")
