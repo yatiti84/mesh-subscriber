@@ -46,7 +46,12 @@ def process_data():
         objective = content['objective'] 
     else:
         objective = ""
-        
+    
+    if 'deviceuuid' in content and content['deviceuuid'] :
+        deviceuuid = content['deviceuuid']
+    else:
+        ""
+    
     project_id = os.environ['project_id']
     logger_name = f'projects/{project_id}/logs/readr-mesh-user-log'
     resource = logging.Resource(type='global', labels={'project_id': project_id})
@@ -55,6 +60,7 @@ def process_data():
     'current-runtime-start': now,
     'datetime': now,
     'exit-time': now,
+    'device-uuid': deviceuuid,
     'action': action,
     'memberId': memberId,
     'objId': objId,
