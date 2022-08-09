@@ -26,7 +26,7 @@ def process_data():
     else:
         return Response("{'error': 'parameter error: action missing'}", status=400, mimetype='application/json')
     
-    if 'memberId' in content and content['memberId']:
+    if 'memberId' in content and content['memberId'] and content['memberId'] != 0:
         memberId = content['memberId']
     else:
         return Response("{'error': 'parameter error: memberId missing'}", status=400, mimetype='application/json')
@@ -40,32 +40,35 @@ def process_data():
     elif 'collectionId' in content and content['collectionId']:
         objId = content['collectionId']
     else:
-        objId = ""
+        objId = ''
     
-    if 'objective' in content and content['objective']:
-        objective = content['objective'] 
-    else:
-        objective = ""
-    
-    if 'deviceuuid' in content and content['deviceuuid'] :
-        deviceuuid = content['deviceuuid']
-    else:
-        ""
+    objective = content['objective']  if 'objective' in content and content['objective'] else ''
+    uuid = content['UUID'] if 'UUID' in content and content['UUID'] else''
+    clientOS = content['os'] if 'os' in content and content['os']  else ''
+    version = content['version'] if 'version' in content and content['version'] else ''
+    device = content['device'] if 'device' in content and content['device'] else ''
     
     project_id = os.environ['project_id']
-    logger_name = f'projects/{project_id}/logs/readr-mesh-user-log'
+    log_name = os.environ['log_name'] # readr-mesh-user-log-dev
+    logger_name = f'projects/{project_id}/logs/{log_name}'
     resource = logging.Resource(type='global', labels={'project_id': project_id})
-    clientInfo = {'clientInfo':
-    {
-    'current-runtime-start': now,
-    'datetime': now,
-    'exit-time': now,
-    'device-uuid': deviceuuid,
-    'action': action,
-    'memberId': memberId,
-    'objId': objId,
-    'objective': objective
-        }
+    clientInfo = {
+    'client-info':
+        {
+        'current-runtime-start': now,
+        'datetime': now,
+        'exit-time': now,
+        'action': action,
+        'memberId': memberId,
+        'objId': objId,
+        'objective': objective
+            },
+    'client-os': {
+        'UUID': uuid,
+        'name': clientOS,
+        'version': version,
+        'device name': device,
+            }
     }
     logging_client = logging.Client()
     logger = logging_client.logger(logger_name)
