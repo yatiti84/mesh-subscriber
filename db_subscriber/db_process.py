@@ -25,6 +25,8 @@ def assign_action_handler(content):
             return bookmark_handler(content, gql_client)
         if 'like' in action:
             return like_handler(content, gql_client)
+        if 'read' or 'collection' in action:
+            return True
     return False
     
     
